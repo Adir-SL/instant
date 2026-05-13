@@ -6,6 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Instant</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="apple-touch-icon" href="favicon.svg"/>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rock+Salt&family=Indie+Flower&family=Oooh+Baby&display=swap" rel="stylesheet" />
@@ -822,102 +824,6 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-// ─── Favicon ──────────────────────────────────────────────────────────────────
-(function () {
-  // 512px canvas — iOS scales it down and applies the squircle mask itself
-  const S = 512;
-  const c = document.createElement('canvas');
-  c.width = c.height = S;
-  const ctx = c.getContext('2d');
-
-  function rrect(x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.arcTo(x + w, y,     x + w, y + r,     r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h);
-    ctx.arcTo(x,     y + h, x,     y + h - r, r);
-    ctx.lineTo(x,     y + r);
-    ctx.arcTo(x,     y,     x + r, y,         r);
-    ctx.closePath();
-  }
-
-  // ── Background: fill the entire square (iOS clips to squircle) ──
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, S, S);
-
-  // ── Polaroid card ──
-  // Leave ~9% margin each side so the card doesn't touch the squircle edge
-  const margin = Math.round(S * 0.09); // 46px
-  const cw = S - margin * 2;           // 420px wide
-  const cx = margin;
-
-  // Card proportions: 10% border sides/top, 26% border bottom (same as app)
-  const bSide = Math.round(cw * 0.10);
-  const bTop  = Math.round(cw * 0.10);
-  const bBot  = Math.round(cw * 0.26);
-  const pw    = cw - bSide * 2;              // photo width
-  const ph    = Math.round(pw * 4 / 5);      // photo height (5:4 → h = w×0.8)
-  const ch    = bTop + ph + bBot;            // card height
-  const cy    = Math.round((S - ch) / 2);   // vertically centred
-
-  // Card shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.18)';
-  ctx.shadowBlur  = 30;
-  ctx.shadowOffsetY = 8;
-  rrect(cx, cy, cw, ch, 16);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.shadowColor = 'transparent';
-
-  // ── Photo area ──
-  const ppx = cx + bSide, ppy = cy + bTop;
-  rrect(ppx, ppy, pw, ph, 4);
-  ctx.save();
-  ctx.clip();
-
-  // Sky gradient
-  const sky = ctx.createLinearGradient(0, ppy, 0, ppy + ph);
-  sky.addColorStop(0,    '#cce8f8');
-  sky.addColorStop(0.55, '#5aaaea');
-  sky.addColorStop(1,    '#3a7ec8');
-  ctx.fillStyle = sky;
-  ctx.fillRect(ppx, ppy, pw, ph);
-
-  // Sun
-  ctx.fillStyle = '#FFD060';
-  ctx.beginPath();
-  ctx.arc(ppx + pw * 0.78, ppy + ph * 0.22, pw * 0.09, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hills
-  ctx.fillStyle = 'rgba(60, 140, 60, 0.88)';
-  ctx.beginPath();
-  ctx.moveTo(ppx, ppy + ph);
-  ctx.quadraticCurveTo(ppx + pw * 0.22, ppy + ph * 0.60, ppx + pw * 0.44, ppy + ph * 0.76);
-  ctx.quadraticCurveTo(ppx + pw * 0.66, ppy + ph * 0.92, ppx + pw, ppy + ph * 0.66);
-  ctx.lineTo(ppx + pw, ppy + ph);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
-
-  // Subtle card border
-  rrect(cx, cy, cw, ch, 16);
-  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  const dataURL = c.toDataURL('image/png');
-  ['icon', 'apple-touch-icon'].forEach(rel => {
-    const l = document.createElement('link');
-    l.rel  = rel;
-    l.href = dataURL;
-    document.head.appendChild(l);
-  });
-})();
 </script>
 </body>
 </html>
