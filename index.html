@@ -377,7 +377,8 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 const CROP_RATIO = 5 / 4; // width / height (landscape)
 
-let originalImage = null; // HTMLImageElement (full original)
+let originalImage  = null; // HTMLImageElement — used for layout/display only
+let originalBitmap = null; // ImageBitmap created with colorSpaceConversion:'none' — used for all canvas draws to preserve HDR/P3
 let cropState = {
   zoom: 1,        // scale factor (1 = fit)
   offsetX: 0,    // px offset of image centre from frame centre
@@ -420,8 +421,18 @@ uploadZone.addEventListener('drop', e => {
 function loadImage(file) {
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => {
-    originalImage = img;
+  img.onload = async () => {
+    originalImage  = img;
+    // Decode the raw file bytes without any colour-space conversion so that
+    // P3 / HDR values are preserved when drawn to our display-p3 canvases.
+    try {
+      originalBitmap = await createImageBitmap(file, {
+        colorSpaceConversion: 'none',
+        premultiplyAlpha: 'none',
+      });
+    } catch {
+      originalBitmap = null; // older Safari — fall back to <img>
+    }
     initCrop();
     showStep('crop');
   };
@@ -582,7 +593,8 @@ function extractCrop() {
   const outH = Math.round(containerH * DPR);
   const oc = new OffscreenCanvas(outW, outH);
   const ctx = oc.getContext('2d', { colorSpace: 'display-p3' }) || oc.getContext('2d');
-  ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+  // Prefer originalBitmap (raw, no colour conversion) over the <img> element
+  ctx.drawImage(originalBitmap || img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
   return oc; // treat as ImageSource
 }
 
@@ -595,6 +607,7 @@ btnBackUpload.addEventListener('click', () => {
   showStep('upload');
   uploadZone.style.display = '';
   fileInput.value = '';
+  originalBitmap = null;
 });
 
 captionInput.addEventListener('input', renderPreview);
