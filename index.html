@@ -583,7 +583,7 @@ function extractCrop() {
   const outW = Math.round(containerW * DPR);
   const outH = Math.round(containerH * DPR);
   const oc = new OffscreenCanvas(outW, outH);
-  const ctx = oc.getContext('2d');
+  const ctx = oc.getContext('2d', { colorSpace: 'display-p3' }) || oc.getContext('2d');
   ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
   return oc; // treat as ImageSource
 }
@@ -644,7 +644,7 @@ async function renderPreview() {
   canvas.width  = N * DPR;
   canvas.height = N * DPR;
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { colorSpace: 'display-p3' }) || canvas.getContext('2d');
   ctx.scale(DPR, DPR);
 
   // White Photo background
@@ -715,26 +715,29 @@ async function saveImage() {
     // Render a high-res version (3× for print quality)
     const HQ = await renderHighRes();
 
-    // iOS Safari: use share sheet if possible
+    // JPEG preserves the Display P3 color profile in Exif on iOS Safari
+    const mime = 'image/jpeg';
+    const quality = 0.96;
+
+    // iOS Safari: use share sheet so the file lands directly in Photos
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS && navigator.share) {
       HQ.toBlob(async blob => {
         try {
-          const file = new File([blob], 'instant.png', { type: 'image/png' });
+          const file = new File([blob], 'instant.jpg', { type: mime });
           await navigator.share({ files: [file], title: 'Instant photo' });
           saveFeedback.textContent = 'Shared!';
         } catch {
-          // User cancelled share or share not supported — fall back to link
-          downloadBlob(blob, 'instant.png');
+          downloadBlob(blob, 'instant.jpg');
         }
         btnSave.disabled = false;
-      }, 'image/png');
+      }, mime, quality);
     } else {
       HQ.toBlob(blob => {
-        downloadBlob(blob, 'instant.png');
+        downloadBlob(blob, 'instant.jpg');
         saveFeedback.textContent = 'Saved!';
         btnSave.disabled = false;
-      }, 'image/png');
+      }, mime, quality);
     }
   } catch (err) {
     console.error(err);
@@ -790,11 +793,11 @@ async function renderHighRes() {
     });
   }
 
-  // Convert OffscreenCanvas → regular canvas for toBlob support
+  // Convert OffscreenCanvas → regular canvas for toBlob support (keep P3 color space)
   const out = document.createElement('canvas');
   out.width  = totalW;
   out.height = totalH;
-  const octx = out.getContext('2d');
+  const octx = out.getContext('2d', { colorSpace: 'display-p3' }) || out.getContext('2d');
   octx.drawImage(oc, 0, 0);
   return out;
 }
