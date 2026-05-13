@@ -831,10 +831,7 @@ function downloadBlob(blob, filename) {
   }
 
   // ── Background: fill the entire square (iOS clips to squircle) ──
-  const bg = ctx.createLinearGradient(0, 0, 0, S);
-  bg.addColorStop(0, '#2a2a2a');
-  bg.addColorStop(1, '#141414');
-  ctx.fillStyle = bg;
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, S, S);
 
   // ── Polaroid card ──
@@ -853,9 +850,9 @@ function downloadBlob(blob, filename) {
   const cy    = Math.round((S - ch) / 2);   // vertically centred
 
   // Card shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur  = 40;
-  ctx.shadowOffsetY = 12;
+  ctx.shadowColor = 'rgba(0,0,0,0.18)';
+  ctx.shadowBlur  = 30;
+  ctx.shadowOffsetY = 8;
   rrect(cx, cy, cw, ch, 16);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
